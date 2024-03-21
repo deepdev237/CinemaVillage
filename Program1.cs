@@ -1,11 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
-struct hely
+struct Hely : IEquatable<Hely>
 {
     public int sor;
     public int oszlop;
+    public string name;
+
+    public bool Equals(Hely other)
+    {
+        return sor == other.sor && oszlop == other.oszlop;
+    }
 }
 
 public class Matrix
@@ -16,12 +22,12 @@ public class Matrix
     private const char SelectedValue = 'X';
 
     private char[,] matrix;
-    private List<hely> list;
+    private List<Hely> list;
 
     public Matrix()
     {
         matrix = new char[Rows, Columns];
-        list = new List<hely>();
+        list = new List<Hely>();
         FillMatrix(InitialValue);
 
         // Olvassuk be az előzőleg foglalt helyeket a fájlból
@@ -48,8 +54,7 @@ public class Matrix
             {
                 string[] parts = line.Split(' ', '-');
 
-                // Ellenőrizze, hogy van-e elég rész a konverzióhoz
-                if (parts.Length < 2)
+                if (parts.Length < 3)
                 {
                     Console.WriteLine("Hibás formátum a fájlban.");
                     continue;
@@ -57,14 +62,17 @@ public class Matrix
 
                 int row = int.Parse(parts[0]);
                 int column = int.Parse(parts[1]);
-                SelectSeat(row, column);
+                string name = parts[2];
+                SelectSeat(row, column, name);
             }
         }
     }
 
-
     public void PrintMatrix()
     {
+        // Print a line of dashes
+        Console.WriteLine(new string('-', Columns));
+
         for (int i = 0; i < matrix.GetLength(0); i++)
         {
             for (int j = 0; j < matrix.GetLength(1); j++)
@@ -77,34 +85,31 @@ public class Matrix
         }
     }
 
-    public void SelectSeat(int row, int column)
+    public string SelectSeat(int row, int column, string name)
     {
         if (row >= 1 && row <= Rows && column >= 1 && column <= Columns)
         {
-            // Ellenőrizzük, hogy a hely még szabad-e
-            if (matrix[row - 1, column - 1] != InitialValue)
+            row--;
+            column--;
+
+            Hely selectedSeat;
+            selectedSeat.sor = row;
+            selectedSeat.oszlop = column;
+            selectedSeat.name = name;
+
+            if (list.Contains(selectedSeat))
             {
-                Console.WriteLine("Ez a hely már foglalt.");
-                return;
+                return "This seat is already taken.";
             }
 
-            // Ellenőrizzük, hogy a hely szerepel-e a listában
-            hely foglaltHely;
-            foglaltHely.sor = row;
-            foglaltHely.oszlop = column;
-            if (list.Contains(foglaltHely))
-            {
-                Console.WriteLine("Ez a hely már foglalt.");
-                return;
-            }
+            matrix[row, column] = SelectedValue;
+            list.Add(selectedSeat);
 
-            // Ha a hely szabad és nincs a listában, akkor lefoglaljuk
-            matrix[row - 1, column - 1] = SelectedValue;
-            list.Add(foglaltHely); // Frissítjük a listát a lefoglalt helyekkel
+            return "Seat successfully reserved.";
         }
         else
         {
-            throw new ArgumentOutOfRangeException("Invalid row or column number.");
+            return "Invalid row or column number.";
         }
     }
 
@@ -112,9 +117,11 @@ public class Matrix
 
 class Program
 {
+    static Matrix matrix = new Matrix();
+    static string filePath = "data.txt";
+
     static void Main()
     {
-        string filePath = "data.txt";
         while (true)
         {
             Console.Clear();
@@ -125,69 +132,11 @@ class Program
             switch (key.KeyChar)
             {
                 case '1':
-                    // Hely foglalás
-                    Console.Clear();
-                    Console.WriteLine("Hely foglalás:");
-                    Matrix matrix = new Matrix();
-                    matrix.PrintMatrix();
-                    Console.WriteLine("Nyomjon Esc-et a visszalépéshez a menübe.");
-                    while (true)
-                    {
-                        if (Console.ReadKey(true).Key == ConsoleKey.Escape)
-                            break;
-
-                        Console.WriteLine("Enter row number (1-16) and column number (1-15) separated by space to select a seat (e.g., 3 5):");
-                        string input = Console.ReadLine();
-                        Console.WriteLine("Adja meg a nevét: ");
-                        string name = Console.ReadLine();
-                        File.AppendAllText("data.txt", input + " " + name + Environment.NewLine);
-
-                        // Use regular expressions to find all numbers in the input
-                        var matches = System.Text.RegularExpressions.Regex.Matches(input, @"\d+");
-
-                        // If there are not exactly two numbers, continue with the next iteration
-                        if (matches.Count != 2)
-                        {
-                            Console.WriteLine("Invalid input. Please enter valid row and column numbers.");
-                            continue;
-                        }
-
-                        // Parse the numbers
-                        int row = int.Parse(matches[0].Value);
-                        int column = int.Parse(matches[1].Value);
-
-                        // Select the seat
-                        try
-                        {
-                            matrix.SelectSeat(row, column);
-                            Console.Clear(); // Clear console to redraw matrix with updated selection
-                            matrix.PrintMatrix();
-                        }
-                        catch (ArgumentOutOfRangeException e)
-                        {
-                            Console.WriteLine(e.Message);
-                        }
-                    }
+                    ReserveSeat();
                     break;
 
                 case '2':
-                    // Lefoglalt helyek megtekintése
-                    Console.Clear();
-                    Console.WriteLine("Fájlban lévő adatok:");
-                    if (File.Exists(filePath))
-                    {
-                        string[] lines = File.ReadAllLines(filePath);
-                        foreach (var line in lines)
-                        {
-                            Console.WriteLine(line);
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("A fájl nem létezik.");
-                    }
-                    Console.WriteLine("Nyomjon Enter-t a visszalépéshez a menübe.");
-                    Console.ReadLine();
+                    ViewReservedSeats();
                     break;
 
                 case '3':
@@ -200,5 +149,64 @@ class Program
                     break;
             }
         }
+    }
+
+    static void ReserveSeat()
+    {
+        Console.Clear();
+        Console.WriteLine("Hely foglalás:");
+        matrix.PrintMatrix();
+        Console.WriteLine("Nyomjon Esc-et a visszalépéshez a menübe.");
+        while (true)
+        {
+            if (Console.ReadKey(true).Key == ConsoleKey.Escape)
+                break;
+
+            Console.WriteLine("Enter row number (1-16) and column number (1-15) separated by space to select a seat (e.g., 3 5):");
+            string input = Console.ReadLine();
+            Console.WriteLine("Adja meg a nevét: ");
+            string name = Console.ReadLine();
+            File.AppendAllText(filePath, $"{input} {name}{Environment.NewLine}");
+
+            // Use regular expressions to find all numbers in the input
+            var matches = System.Text.RegularExpressions.Regex.Matches(input, @"\d+");
+
+            // If there are not exactly two numbers, continue with the next iteration
+            if (matches.Count != 2)
+            {
+                Console.WriteLine("Invalid input. Please enter valid row and column numbers.");
+                continue;
+            }
+
+            // Parse the numbers
+            int row = int.Parse(matches[0].Value);
+            int column = int.Parse(matches[1].Value);
+
+            // Select the seat
+            string result = matrix.SelectSeat(row, column, name);
+            Console.WriteLine(result);
+            Console.Clear(); // Clear console to redraw matrix with updated selection
+            matrix.PrintMatrix();
+        }
+    }
+
+    static void ViewReservedSeats()
+    {
+        Console.Clear();
+        Console.WriteLine("Fájlban lévő adatok:");
+        if (File.Exists(filePath))
+        {
+            string[] lines = File.ReadAllLines(filePath);
+            foreach (var line in lines)
+            {
+                Console.WriteLine(line);
+            }
+        }
+        else
+        {
+            Console.WriteLine("A fájl nem létezik.");
+        }
+        Console.WriteLine("Nyomjon Enter-t a visszalépéshez a menübe.");
+        Console.ReadLine();
     }
 }
