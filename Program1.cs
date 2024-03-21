@@ -82,12 +82,26 @@ public class Matrix
 
     public void KiirMatrixot()
     {
+        // Print column numbers
+        Console.Write("     "); // For alignment
+        for (int j = 1; j <= matrix.GetLength(1); j++)
+        {
+            Console.Write(j.ToString().PadLeft(3));
+        }
+        Console.WriteLine();
+
+        // Print line for separation
+        Console.WriteLine("              " + new string('-', matrix.GetLength(1) * 2 - 2));
+
         for (int i = 0; i < matrix.GetLength(0); i++)
         {
+            // Print row number
+            Console.Write((i + 1).ToString().PadLeft(2) + "   ");
+
             for (int j = 0; j < matrix.GetLength(1); j++)
             {
                 Console.ForegroundColor = matrix[i, j] == UresHely ? ConsoleColor.White : ConsoleColor.Green;
-                Console.Write(matrix[i, j] + " ");
+                Console.Write(matrix[i, j].ToString().PadLeft(3));
                 Console.ResetColor();
             }
             Console.WriteLine();
@@ -175,6 +189,7 @@ class Program
         Console.WriteLine("Helyfoglalás:");
         matrix.KiirMatrixot();
         Console.WriteLine("Nyomjon Esc-et a visszalépéshez a menübe.");
+
         while (true)
         {
             if (Console.ReadKey(true).Key == ConsoleKey.Escape)
@@ -184,7 +199,6 @@ class Program
             string bemenet = Console.ReadLine();
             Console.WriteLine("Adja meg a nevét: ");
             string nev = Console.ReadLine();
-            //File.AppendAllText(fajlNev, $"{bemenet} {nev}{Environment.NewLine}"); //mar nem kell
 
             // Rendszeres kifejezés a számok megtalálására a bemenetben
             var szamok = System.Text.RegularExpressions.Regex.Matches(bemenet, @"\d+");
