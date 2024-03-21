@@ -174,6 +174,30 @@ public class Matrix
         }
     }
 
+    public string ToroljHelyet(string nev)
+    {
+        var torlendoHelyek = lefoglaltHelyek.Where(hely => hely.Nev == nev).ToList();
+        if (torlendoHelyek.Count == 0)
+        {
+            return "Nincs ilyen névvel foglalt hely.";
+        }
+
+        foreach (var hely in torlendoHelyek)
+        {
+            matrix[hely.Sor, hely.Oszlop] = UresHely;
+            lefoglaltHelyek.Remove(hely);
+        }
+
+        MentsdLeFoglaltHelyekListajat();
+
+        return "Helyfoglalások sikeresen törölve.";
+    }
+
+    public bool FoglaltEezAHely(int sorSzam, int oszlopSzam)
+    {
+        return lefoglaltHelyek.Contains(new Hely { Sor = sorSzam - 1, Oszlop = oszlopSzam - 1 });
+    }
+
     private void MentsdLeFoglaltHelyekListajat()
     {
         List<string> sorok = lefoglaltHelyek
@@ -302,7 +326,14 @@ class Program
                             if (currentColumn < Matrix.OszlopokSzama - 1) currentColumn++;
                             break;
                         case ConsoleKey.Enter:
-                            // if seat is newly selected then deselect it, otherwise select it
+                            // Ha a hely már foglalt, törölje
+                            Hely hely = new Hely { Sor = currentRow, Oszlop = currentColumn };
+                            if (matrix.FoglaltEezAHely(currentRow + 1, currentColumn + 1))
+                            {
+                                matrix.ToroljHelyet(currentRow + 1, currentColumn + 1);
+                            }
+                            // Foglalás
+                            matrix.FoglaljHelyet(currentRow + 1, currentColumn + 1, _nev);
 
                             exitted = false;
                             break;
@@ -321,41 +352,35 @@ class Program
 
     static void ToroljHelyet()
     {
-        // Helytörlés
         Console.Clear();
-        Console.WriteLine("Helytörlés:");
+        Console.WriteLine("1. Helyfoglalás törlése név alapján");
+        Console.WriteLine("2. Helyfoglalás törlése sor- és oszlopszám alapján");
+        string option = Console.ReadLine();
+
         matrix.KiirMatrixot();
 
-        //request row and column
-        Console.WriteLine("Adja meg a sor- (1-16) és az oszlopszámot (1-15) szóközvel elválasztva a hely kiválasztásához (pl.: 3 5):");
-        string bemenet = Console.ReadLine();
-
-        // Rendszeres kifejezés a számok megtalálására a bemenetben
-        var szamok = System.Text.RegularExpressions.Regex.Matches(bemenet, @"\d+");
-
-        // Ha nincs pontosan két szám, folytatjuk a ciklust
-        if (szamok.Count != 2)
+        switch (option)
         {
-            Console.WriteLine("Érvénytelen bemenet. Kérem, adjon meg érvényes sor- és oszlopszámot.");
-            return;
+            case "1":
+                Console.WriteLine("Add meg a nevet:");
+                string name = Console.ReadLine();
+
+                matrix.ToroljHelyet(name);
+
+                break;
+            case "2":
+                Console.WriteLine("Add meg a sor- és oszlopszámot:");
+                string[] input = Console.ReadLine().Split(' ');
+                int row = int.Parse(input[0]);
+                int column = int.Parse(input[1]);
+
+                matrix.ToroljHelyet(row, column);
+
+                break;
+            default:
+                Console.WriteLine("Invalid option");
+                break;
         }
-
-        // Számok kinyerése
-        int sorSzam = int.Parse(szamok[0].Value);
-        int oszlopSzam = int.Parse(szamok[1].Value);
-
-        // Helytörlés
-        string eredmeny = matrix.ToroljHelyet(sorSzam, oszlopSzam);
-        Console.Clear(); // A konzol törlése a frissített mátrix megjelenítéséhez
-        matrix.KiirMatrixot();
-
-        Console.WriteLine(eredmeny);
-
-        Console.WriteLine("Nyomjon Entert a visszalépéshez a menübe.");
-
-        Console.ReadLine();
-
-
     }
 
     static void ListazdFoglaltHelyeket()
