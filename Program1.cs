@@ -8,9 +8,18 @@ struct Hely
     public int Oszlop;
     public string Nev;
 
-    public bool Equals(Hely other)
+    public override bool Equals(object obj)
     {
-        return Sor == other.Sor && Oszlop == other.Oszlop;
+        if (obj is Hely other)
+        {
+            return Sor == other.Sor && Oszlop == other.Oszlop;
+        }
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Sor, Oszlop);
     }
 }
 
@@ -89,8 +98,8 @@ public class Matrix
     {
         if (sorSzam >= 1 && sorSzam <= SorokSzama && oszlopSzam >= 1 && oszlopSzam <= OszlopokSzama)
         {
-            sorSzam--;
-            oszlopSzam--;
+            //sorSzam--;
+            //oszlopSzam--;
 
             Hely ujHely;
             ujHely.Sor = sorSzam;
@@ -193,9 +202,9 @@ class Program
 
             // Helyfoglalás
             string eredmeny = matrix.FoglaljHelyet(sorSzam, oszlopSzam, nev);
-            Console.WriteLine(eredmeny);
             Console.Clear(); // A konzol törlése a frissített mátrix megjelenítéséhez
             matrix.KiirMatrixot();
+            Console.WriteLine(eredmeny);
         }
     }
 
