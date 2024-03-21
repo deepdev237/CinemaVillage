@@ -198,6 +198,12 @@ public class Matrix
         return lefoglaltHelyek.Contains(new Hely { Sor = sorSzam - 1, Oszlop = oszlopSzam - 1 });
     }
 
+    public bool FoglaltEezAHely(int sorSzam, int oszlopSzam, string nev)
+    {
+        // Ahol a nev egyezik és a hely foglalt
+        return lefoglaltHelyek.Contains(new Hely { Sor = sorSzam - 1, Oszlop = oszlopSzam - 1, Nev = nev });
+    }
+
     private void MentsdLeFoglaltHelyekListajat()
     {
         List<string> sorok = lefoglaltHelyek
@@ -255,7 +261,7 @@ class Program
         Console.WriteLine("Helyfoglalás:");
         matrix.KiirMatrixot();
         Console.WriteLine("Nyomjon Entert a bemeneti módhoz, vagy Space-t a navigációs módhoz. Nyomjon Esc-et a visszalépéshez a menübe.");
-
+        
         switch (Console.ReadKey(true).Key)
         {
             case ConsoleKey.Escape:
@@ -326,14 +332,20 @@ class Program
                             if (currentColumn < Matrix.OszlopokSzama - 1) currentColumn++;
                             break;
                         case ConsoleKey.Enter:
-                            // Ha a hely már foglalt, törölje
-                            Hely hely = new Hely { Sor = currentRow, Oszlop = currentColumn };
-                            if (matrix.FoglaltEezAHely(currentRow + 1, currentColumn + 1))
+                            // Ha a hely már foglalt nem csinálunk semmit
+                            // Ha a hely már foglalt de a saját nevünkön van akkor törölhetjük
+                            // Ha a hely üres akkor foglalunk
+                            // Ha a hely foglalt más néven nem csinálunk semmit
+
+                            if (matrix.FoglaltEezAHely(currentRow + 1, currentColumn + 1, _nev))
                             {
                                 matrix.ToroljHelyet(currentRow + 1, currentColumn + 1);
                             }
-                            // Foglalás
-                            matrix.FoglaljHelyet(currentRow + 1, currentColumn + 1, _nev);
+
+                            if (!matrix.FoglaltEezAHely(currentRow + 1, currentColumn + 1))
+                            {
+                                matrix.FoglaljHelyet(currentRow + 1, currentColumn + 1, _nev);
+                            }
 
                             exitted = false;
                             break;
@@ -386,6 +398,10 @@ class Program
     static void ListazdFoglaltHelyeket()
     {
         Console.Clear();
+
+        matrix.KiirMatrixot();
+        Console.WriteLine();
+
         Console.WriteLine("Fájlban lévő adatok:");
         if (File.Exists(fajlNev))
         {
