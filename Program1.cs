@@ -98,8 +98,8 @@ public class Matrix
     {
         if (sorSzam >= 1 && sorSzam <= SorokSzama && oszlopSzam >= 1 && oszlopSzam <= OszlopokSzama)
         {
-            //sorSzam--;
-            //oszlopSzam--;
+            sorSzam--;
+            oszlopSzam--;
 
             Hely ujHely;
             ujHely.Sor = sorSzam;
