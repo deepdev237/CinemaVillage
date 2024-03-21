@@ -25,8 +25,8 @@ struct Hely
 
 public class Matrix
 {
-    private const int SorokSzama = 16;
-    private const int OszlopokSzama = 15;
+    public const int SorokSzama = 16;
+    public const int OszlopokSzama = 15;
     private const char UresHely = 'O';
     private const char FoglaltHely = 'X';
 
@@ -82,6 +82,15 @@ public class Matrix
 
     public void KiirMatrixot()
     {
+        // Reset the matrix to empty
+        ToltseKiMatrixot(UresHely);
+
+        // Mark the taken seats in the matrix
+        foreach (var hely in lefoglaltHelyek)
+        {
+            matrix[hely.Sor, hely.Oszlop] = FoglaltHely;
+        }
+
         // Print column numbers
         Console.Write("     "); // For alignment
         for (int j = 1; j <= matrix.GetLength(1); j++)
@@ -137,6 +146,34 @@ public class Matrix
         }
     }
 
+    public string ToroljHelyet(int sorSzam, int oszlopSzam)
+    {
+        if (sorSzam >= 1 && sorSzam <= SorokSzama && oszlopSzam >= 1 && oszlopSzam <= OszlopokSzama)
+        {
+            sorSzam--;
+            oszlopSzam--;
+
+            Hely torlendoHely = new Hely();
+            torlendoHely.Sor = sorSzam;
+            torlendoHely.Oszlop = oszlopSzam;
+
+            if (!lefoglaltHelyek.Contains(torlendoHely))
+            {
+                return "Ez a hely nincs foglalva.";
+            }
+
+            matrix[sorSzam, oszlopSzam] = UresHely;
+            lefoglaltHelyek.Remove(torlendoHely);
+            MentsdLeFoglaltHelyekListajat();
+
+            return "Helyfoglalás sikeresen törölve.";
+        }
+        else
+        {
+            return "Érvénytelen sor- vagy oszlopindex.";
+        }
+    }
+
     private void MentsdLeFoglaltHelyekListajat()
     {
         List<string> sorok = lefoglaltHelyek
@@ -158,8 +195,9 @@ class Program
         {
             Console.Clear();
             Console.WriteLine("1. Helyfoglalás");
-            Console.WriteLine("2. Foglalt helyek megtekintése");
-            Console.WriteLine("3. Kilépés");
+            Console.WriteLine("2. Helytörlés");
+            Console.WriteLine("3. Foglalt helyek megtekintése");
+            Console.WriteLine("4. Kilépés");
             ConsoleKeyInfo billentyu = Console.ReadKey(true);
             switch (billentyu.KeyChar)
             {
@@ -168,10 +206,14 @@ class Program
                     break;
 
                 case '2':
-                    ListazdFoglaltHelyeket();
+                    ToroljHelyet();
                     break;
 
                 case '3':
+                    ListazdFoglaltHelyeket();
+                    break;
+
+                case '4':
                     Environment.Exit(0);
                     break;
 
@@ -188,38 +230,132 @@ class Program
         Console.Clear();
         Console.WriteLine("Helyfoglalás:");
         matrix.KiirMatrixot();
-        Console.WriteLine("Nyomjon Esc-et a visszalépéshez a menübe.");
+        Console.WriteLine("Nyomjon Entert a bemeneti módhoz, vagy Space-t a navigációs módhoz. Nyomjon Esc-et a visszalépéshez a menübe.");
 
-        while (true)
+        switch (Console.ReadKey(true).Key)
         {
-            if (Console.ReadKey(true).Key == ConsoleKey.Escape)
+            case ConsoleKey.Escape:
+                return;
+
+            case ConsoleKey.Enter:
+                // bemenet mód
+                while (true)
+                {
+                    if (Console.ReadKey(true).Key == ConsoleKey.Escape)
+                        break;
+
+                    Console.WriteLine("Adja meg a sor- (1-16) és az oszlopszámot (1-15) szóközvel elválasztva a hely kiválasztásához (pl.: 3 5):");
+                    string bemenet = Console.ReadLine();
+                    Console.WriteLine("Adja meg a nevét: ");
+                    string nev = Console.ReadLine();
+
+                    // Rendszeres kifejezés a számok megtalálására a bemenetben
+                    var szamok = System.Text.RegularExpressions.Regex.Matches(bemenet, @"\d+");
+
+                    // Ha nincs pontosan két szám, folytatjuk a ciklust
+                    if (szamok.Count != 2)
+                    {
+                        Console.WriteLine("Érvénytelen bemenet. Kérem, adjon meg érvényes sor- és oszlopszámot.");
+                        continue;
+                    }
+
+                    // Számok kinyerése
+                    int sorSzam = int.Parse(szamok[0].Value);
+                    int oszlopSzam = int.Parse(szamok[1].Value);
+
+                    // Helyfoglalás
+                    string eredmeny = matrix.FoglaljHelyet(sorSzam, oszlopSzam, nev);
+                    Console.Clear(); // A konzol törlése a frissített mátrix megjelenítéséhez
+                    matrix.KiirMatrixot();
+                    Console.WriteLine(eredmeny);
+                }
                 break;
+            case ConsoleKey.Spacebar:
+                // Navigational mode
+                int currentRow = 0;
+                int currentColumn = 0;
 
-            Console.WriteLine("Adja meg a sor- (1-16) és az oszlopszámot (1-15) szóközvel elválasztva a hely kiválasztásához (pl.: 3 5):");
-            string bemenet = Console.ReadLine();
-            Console.WriteLine("Adja meg a nevét: ");
-            string nev = Console.ReadLine();
+                bool exitted = false;
 
-            // Rendszeres kifejezés a számok megtalálására a bemenetben
-            var szamok = System.Text.RegularExpressions.Regex.Matches(bemenet, @"\d+");
+                Console.WriteLine("Adja meg a nevét: ");
+                string _nev = Console.ReadLine();
 
-            // Ha nincs pontosan két szám, folytatjuk a ciklust
-            if (szamok.Count != 2)
-            {
-                Console.WriteLine("Érvénytelen bemenet. Kérem, adjon meg érvényes sor- és oszlopszámot.");
-                continue;
-            }
+                while (true)
+                {
+                    Console.Clear();
+                    matrix.KiirMatrixot();
+                    Console.SetCursorPosition(currentColumn * 3  + 6, currentRow + 2); // Adjust these values as needed
 
-            // Számok kinyerése
-            int sorSzam = int.Parse(szamok[0].Value);
-            int oszlopSzam = int.Parse(szamok[1].Value);
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    switch (key.Key)
+                    {
+                        case ConsoleKey.UpArrow:
+                            if (currentRow > 0) currentRow--;
+                            break;
+                        case ConsoleKey.DownArrow:
+                            if (currentRow < Matrix.SorokSzama - 1) currentRow++;
+                            break;
+                        case ConsoleKey.LeftArrow:
+                            if (currentColumn > 0) currentColumn--;
+                            break;
+                        case ConsoleKey.RightArrow:
+                            if (currentColumn < Matrix.OszlopokSzama - 1) currentColumn++;
+                            break;
+                        case ConsoleKey.Enter:
+                            // if seat is newly selected then deselect it, otherwise select it
 
-            // Helyfoglalás
-            string eredmeny = matrix.FoglaljHelyet(sorSzam, oszlopSzam, nev);
-            Console.Clear(); // A konzol törlése a frissített mátrix megjelenítéséhez
-            matrix.KiirMatrixot();
-            Console.WriteLine(eredmeny);
+                            exitted = false;
+                            break;
+                        case ConsoleKey.Escape:
+                            // Exit navigation mode
+                            exitted = true;
+                            break;
+                    }
+                if (exitted)
+                    {
+                        return;
+                    }
+                }
         }
+    }
+
+    static void ToroljHelyet()
+    {
+        // Helytörlés
+        Console.Clear();
+        Console.WriteLine("Helytörlés:");
+        matrix.KiirMatrixot();
+
+        //request row and column
+        Console.WriteLine("Adja meg a sor- (1-16) és az oszlopszámot (1-15) szóközvel elválasztva a hely kiválasztásához (pl.: 3 5):");
+        string bemenet = Console.ReadLine();
+
+        // Rendszeres kifejezés a számok megtalálására a bemenetben
+        var szamok = System.Text.RegularExpressions.Regex.Matches(bemenet, @"\d+");
+
+        // Ha nincs pontosan két szám, folytatjuk a ciklust
+        if (szamok.Count != 2)
+        {
+            Console.WriteLine("Érvénytelen bemenet. Kérem, adjon meg érvényes sor- és oszlopszámot.");
+            return;
+        }
+
+        // Számok kinyerése
+        int sorSzam = int.Parse(szamok[0].Value);
+        int oszlopSzam = int.Parse(szamok[1].Value);
+
+        // Helytörlés
+        string eredmeny = matrix.ToroljHelyet(sorSzam, oszlopSzam);
+        Console.Clear(); // A konzol törlése a frissített mátrix megjelenítéséhez
+        matrix.KiirMatrixot();
+
+        Console.WriteLine(eredmeny);
+
+        Console.WriteLine("Nyomjon Entert a visszalépéshez a menübe.");
+
+        Console.ReadLine();
+
+
     }
 
     static void ListazdFoglaltHelyeket()
